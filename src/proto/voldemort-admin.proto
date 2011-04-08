@@ -1,0 +1,168 @@
+package voldemort;
+
+option java_package = "voldemort.client.protocol.pb";
+option java_outer_classname = "VAdminProto";
+option optimize_for = SPEED;
+
+import "voldemort-client.proto";
+
+message GetMetadataRequest {
+  required bytes key = 1;
+}
+
+message GetMetadataResponse {
+  optional Versioned version = 1;
+  optional Error error = 2;
+}
+
+message UpdateMetadataRequest {
+  required bytes key = 1;
+  required Versioned versioned = 2;
+}
+
+message UpdateMetadataResponse {
+  optional Error error = 1;
+}
+
+message PartitionEntry {
+  required bytes key = 1;
+  required Versioned versioned = 2;
+}
+
+message UpdatePartitionEntriesRequest {
+  required string store = 1;
+  required PartitionEntry partition_entry = 2;
+  optional VoldemortFilter filter = 3;
+}
+
+message UpdatePartitionEntriesResponse {
+  optional Error error = 1;
+}
+
+message VoldemortFilter {
+  required string name = 1;
+  required bytes data = 2;
+}
+
+message FetchPartitionEntriesRequest {
+  repeated int32 partitions = 1;
+  required string store = 2;
+  optional VoldemortFilter filter = 3;
+  optional bool fetch_values = 4;
+  optional bool fetch_master_entries = 5;
+}
+
+message FetchPartitionEntriesResponse {
+  optional PartitionEntry partition_entry = 1;
+  optional bytes key = 2;
+  optional Error error = 3;
+}
+
+message DeletePartitionEntriesRequest {
+  required string store = 1;
+  repeated int32 partitions = 2;
+  optional VoldemortFilter filter = 3; 
+}
+
+message DeletePartitionEntriesResponse {
+  optional int32 count = 1;
+  optional Error error = 2;
+}
+
+message InitiateFetchAndUpdateRequest {
+  required int32 node_id = 1;
+  repeated int32 partitions = 2;
+  required string store = 3;
+  optional VoldemortFilter filter = 4;
+}
+
+message AsyncOperationStatusRequest {
+  required int32 request_id = 1;
+}
+
+message AsyncOperationStopRequest {
+  required int32 request_id = 1;
+}
+
+message AsyncOperationStopResponse {
+  optional Error error = 1;
+}
+
+message AsyncOperationListRequest {
+  required int32 request_id = 1;
+  required bool show_complete = 2 [default = false];
+}
+
+message AsyncOperationListResponse {
+  repeated int32 request_ids = 1;
+  optional Error error = 2;
+}
+
+message InitiateRebalanceNodeRequest {
+  required int32 stealer_id =2;
+  required int32 donor_id = 3;
+  repeated int32 partitions = 4;
+  required int32 attempt = 5;
+  repeated int32  deletePartitions = 6;
+  repeated string unbalanced_store = 7;
+}
+
+message AsyncOperationStatusResponse {
+  optional int32 request_id = 1;
+  optional string description = 2;
+  optional string status = 3;
+  optional bool complete = 4;
+  optional Error error = 5;
+}
+
+message TruncateEntriesRequest {
+  required string store = 1;
+}
+
+message TruncateEntriesResponse {
+  optional Error error = 1;
+}
+
+message AddStoreRequest {
+  required string storeDefinition = 1;
+}
+
+message AddStoreResponse {
+  optional Error error = 1;
+}
+
+enum AdminRequestType {
+  GET_METADATA = 0;
+  UPDATE_METADATA = 1;
+  UPDATE_PARTITION_ENTRIES = 2;
+  FETCH_PARTITION_ENTRIES = 3;
+  DELETE_PARTITION_ENTRIES = 4;
+  INITIATE_FETCH_AND_UPDATE = 5;
+  ASYNC_OPERATION_STATUS = 6;
+  INITIATE_REBALANCE_NODE = 7;
+  ASYNC_OPERATION_STOP = 8;
+  ASYNC_OPERATION_LIST = 9;
+  TRUNCATE_ENTRIES = 10;
+  ADD_STORE = 11;
+}
+
+message VoldemortAdminRequest {
+  required AdminRequestType type = 1;
+  optional GetMetadataRequest get_metadata = 2;
+  optional UpdateMetadataRequest update_metadata = 3;
+  optional UpdatePartitionEntriesRequest update_partition_entries = 4;
+  optional FetchPartitionEntriesRequest fetch_partition_entries = 5;
+  optional DeletePartitionEntriesRequest delete_partition_entries = 6;
+  optional InitiateFetchAndUpdateRequest initiate_fetch_and_update = 7;
+  optional AsyncOperationStatusRequest async_operation_status = 8;
+  optional InitiateRebalanceNodeRequest initiate_rebalance_node = 9;
+  optional AsyncOperationStopRequest async_operation_stop = 10;
+  optional AsyncOperationListRequest async_operation_list = 11;
+  optional TruncateEntriesRequest truncate_entries = 12;
+  optional AddStoreRequest add_store = 13;
+}
+
+
+  
+
+
