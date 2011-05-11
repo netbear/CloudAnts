@@ -557,6 +557,8 @@ public class RoutedStore implements Store<ByteArray, byte[]> {
             List<R> result = Lists.newArrayListWithExpectedSize(retrieved.size());
             for(GetResult<R> getResult: retrieved)
                 result.addAll(getResult.retrieved);
+            if(logger.isTraceEnabled())
+                logger.trace("return " + result.size() + "items from routedstore");
             return result;
         } else
             throw new InsufficientOperationalNodesException(this.storeDef.getRequiredReads()

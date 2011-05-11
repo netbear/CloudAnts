@@ -84,7 +84,7 @@ public class VoldemortNativeClientRequestFormat implements RequestFormat {
         outputStream.writeUTF(storeName);
         outputStream.writeBoolean(routingType.equals(RequestRoutingType.ROUTED));
         if(protocolVersion >= 2) {
-            outputStream.writeUTF(routingType.toString());
+            outputStream.writeByte(routingType.getRoutingTypeCode());
         }
         outputStream.writeInt(key.length());
         outputStream.write(key.get());
@@ -119,7 +119,7 @@ public class VoldemortNativeClientRequestFormat implements RequestFormat {
         output.writeUTF(storeName);
         output.writeBoolean(routingType.equals(RequestRoutingType.ROUTED));
         if(protocolVersion >= 2) {
-            output.writeUTF(routingType.toString());
+            output.writeByte(routingType.getRoutingTypeCode());
         }
         // write out keys
         List<ByteArray> l = new ArrayList<ByteArray>();
@@ -157,7 +157,7 @@ public class VoldemortNativeClientRequestFormat implements RequestFormat {
         outputStream.writeUTF(storeName);
         outputStream.writeBoolean(routingType.equals(RequestRoutingType.ROUTED));
         if(protocolVersion >= 2) {
-            outputStream.writeUTF(routingType.toString());
+            outputStream.writeByte(routingType.getRoutingTypeCode());
         }
         outputStream.writeInt(key.length());
         outputStream.write(key.get());
@@ -204,7 +204,7 @@ public class VoldemortNativeClientRequestFormat implements RequestFormat {
         output.writeUTF(storeName);
         output.writeBoolean(routingType.equals(RequestRoutingType.ROUTED));
         if(protocolVersion >= 2) {
-            output.writeUTF(routingType.toString());
+            output.writeByte(routingType.getRoutingTypeCode());
         }
         output.writeInt(key.length());
         output.write(key.get());

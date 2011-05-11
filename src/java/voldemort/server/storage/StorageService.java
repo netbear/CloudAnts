@@ -74,6 +74,7 @@ import voldemort.store.stats.DataSetStats;
 import voldemort.store.stats.StatTrackingStore;
 import voldemort.store.stats.StoreStats;
 import voldemort.store.stats.StoreStatsJmx;
+import voldemort.store.tracker.TrackStore;
 import voldemort.store.versioned.InconsistencyResolvingStore;
 import voldemort.store.views.ViewStorageConfiguration;
 import voldemort.store.views.ViewStorageEngine;
@@ -264,6 +265,10 @@ public class StorageService extends AbstractService {
                 }
             }
         }
+
+        TrackStore<ByteArray, byte[]> trackStore = new TrackStore<ByteArray, byte[]>(store,
+                                                                                     metadata);
+        store = trackStore;
 
         storeRepository.addLocalStore(store);
     }
