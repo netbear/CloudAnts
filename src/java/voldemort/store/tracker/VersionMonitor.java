@@ -34,6 +34,7 @@ public class VersionMonitor {
     private MetadataStore metaStore;
     private final SocketPool socketPool;
     private Map<Integer, Store<ByteArray, byte[]>> serverMapping;
+    private static final ThreadLocal<String> clientAddr = new ThreadLocal<String>();
 
     public VersionMonitor(MetadataStore meta, ClientConfig config) {
         metaStore = meta;
@@ -44,6 +45,14 @@ public class VersionMonitor {
                                     config.getSocketKeepAlive());
         serverMapping = Maps.newHashMap();
         init();
+    }
+
+    public static String getAddr() {
+        return clientAddr.get();
+    }
+
+    public static void setAddr(String addr) {
+        clientAddr.set(addr);
     }
 
     public void init() {

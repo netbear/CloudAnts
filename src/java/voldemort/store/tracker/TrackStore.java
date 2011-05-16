@@ -3,6 +3,7 @@ package voldemort.store.tracker;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
@@ -17,10 +18,13 @@ import voldemort.utils.ByteUtils;
 import voldemort.versioning.VectorClock;
 import voldemort.versioning.Versioned;
 
+import com.google.common.collect.Maps;
+
 public class TrackStore<K, V> extends DelegatingStore<K, V> {
 
     private static final Logger logger = Logger.getLogger(TrackStore.class.getName());
     private Set<K> newKeySet;
+    private Map<K, String> keySources;
     private final MetadataStore metaData;
     private static final String CLUSTER_VERSION = "server.version";
     private VersionMonitor monitor;
@@ -38,6 +42,7 @@ public class TrackStore<K, V> extends DelegatingStore<K, V> {
         this.metaData = metaStore;
         monitor = new VersionMonitor(metaData, new ClientConfig());
         nodeId = metaData.getNodeId();
+        keySources = Maps.newHashMap();
     }
 
     @Override
@@ -54,11 +59,13 @@ public class TrackStore<K, V> extends DelegatingStore<K, V> {
             synchronized(keyCacheLock) {
                 version = monitor.getClusterVersion();
                 for(K k: newKeySet) {
-                    logger.info("Put " + k + " " + version.getVersion());
+                    String addr = keySources.get(k);
+                    logger.info(addr + " Put " + k + " " + version.getVersion());
                 }
                 VectorClock clock = (VectorClock) version.getVersion();
                 clock.incrementVersion(nodeId, System.currentTimeMillis());
                 newKeySet.clear();
+                keySources.clear();
                 /*
                  * TODO: Write back server version
                  */
@@ -77,7 +84,8 @@ public class TrackStore<K, V> extends DelegatingStore<K, V> {
             version = metaData.get(CLUSTER_VERSION).get(0);
         }
 
-        logger.info("Get " + key + " " + version.getVersion());
+        String addr = VersionMonitor.getAddr();
+        logger.info(addr + " Get " + key + " " + version.getVersion());
 
         return rValue;
     }
@@ -90,8 +98,11 @@ public class TrackStore<K, V> extends DelegatingStore<K, V> {
             throw e;
         }
 
+        String addr = VersionMonitor.getAddr();
+
         synchronized(keyCacheLock) {
             newKeySet.add(key);
+            keySources.put(key, addr);
         }
     }
 }

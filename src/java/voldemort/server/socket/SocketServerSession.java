@@ -19,6 +19,7 @@ import voldemort.server.protocol.RequestHandler;
 import voldemort.server.protocol.RequestHandlerFactory;
 import voldemort.server.protocol.StreamRequestHandler;
 import voldemort.server.protocol.StreamRequestHandler.StreamRequestHandlerState;
+import voldemort.store.tracker.VersionMonitor;
 import voldemort.utils.ByteUtils;
 
 /**
@@ -70,6 +71,7 @@ public class SocketServerSession implements Runnable {
             RequestHandler handler = handlerFactory.getRequestHandler(protocol);
             logger.info("Client " + socket.getRemoteSocketAddress()
                         + " connected successfully with protocol " + protocol.getCode());
+            VersionMonitor.setAddr(socket.getRemoteSocketAddress().toString());
 
             while(!isInterrupted() && !socket.isClosed() && !isClosed) {
                 StreamRequestHandler srh = handler.handleRequest(inputStream, outputStream);
