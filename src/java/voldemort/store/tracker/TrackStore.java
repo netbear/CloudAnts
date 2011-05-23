@@ -57,27 +57,31 @@ public class TrackStore<K, V> extends DelegatingStore<K, V> {
 
         if(newKeySet.contains(key)) {
             synchronized(keyCacheLock) {
-                version = monitor.getClusterVersion();
-                for(K k: newKeySet) {
-                    String addr = keySources.get(k);
-                    logger.info(addr + " Put " + k + " " + version.getVersion());
-                }
-                VectorClock clock = (VectorClock) version.getVersion();
-                clock.incrementVersion(nodeId, System.currentTimeMillis());
-                newKeySet.clear();
-                keySources.clear();
-                /*
-                 * TODO: Write back server version
-                 */
-                long serverVersion = Long.parseLong(ByteUtils.getString(version.getValue(), "UTF-8"));
-                serverVersion++;
+                if(newKeySet.contains(key)) {
+                    version = monitor.getClusterVersion();
+                    for(K k: newKeySet) {
+                        String addr = keySources.get(k);
+                        logger.info(addr + " Put " + k + " " + version.getVersion());
+                    }
+                    VectorClock clock = (VectorClock) version.getVersion();
+                    clock.incrementVersion(nodeId, System.currentTimeMillis());
+                    newKeySet.clear();
+                    keySources.clear();
+                    /*
+                     * TODO: Write back server version
+                     */
+                    long serverVersion = Long.parseLong(ByteUtils.getString(version.getValue(),
+                                                                            "UTF-8"));
+                    serverVersion++;
 
-                ByteArray keyBytes = new ByteArray(ByteUtils.getBytes(MetadataStore.SERVER_VERSION,
-                                                                      "UTF-8"));
-                Versioned<byte[]> newVersion = new Versioned<byte[]>(ByteUtils.getBytes(Long.toString(serverVersion),
-                                                                                        "UTF-8"),
-                                                                     clock);
-                metaData.put(keyBytes, newVersion);
+                    ByteArray keyBytes = new ByteArray(ByteUtils.getBytes(MetadataStore.SERVER_VERSION,
+                                                                          "UTF-8"));
+                    Versioned<byte[]> newVersion = new Versioned<byte[]>(ByteUtils.getBytes(Long.toString(serverVersion),
+                                                                                            "UTF-8"),
+                                                                         clock);
+                    metaData.put(keyBytes, newVersion);
+                } else
+                    version = metaData.get(CLUSTER_VERSION).get(0);
             }
         } else {
 
