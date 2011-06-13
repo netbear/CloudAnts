@@ -1,5 +1,6 @@
 package voldemort.store.tracker;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -59,12 +60,18 @@ public class TrackStore<K, V> extends DelegatingStore<K, V> {
             synchronized(keyCacheLock) {
                 if(newKeySet.contains(key)) {
                     version = monitor.getClusterVersion();
-                    for(K k: newKeySet) {
-                        String addr = keySources.get(k);
-                        logger.info(addr + " Put " + k + " " + version.getVersion());
-                    }
                     VectorClock clock = (VectorClock) version.getVersion();
                     clock.incrementVersion(nodeId, System.currentTimeMillis());
+
+                    for(K k: newKeySet) {
+                        String addr = keySources.get(k);
+                        logger.info(addr
+                                    + " Put "
+                                    + k
+                                    + " "
+                                    + Arrays.toString(((VectorClock) version.getVersion()).toBytes()));
+                    }
+
                     newKeySet.clear();
                     keySources.clear();
                     /*
@@ -89,7 +96,8 @@ public class TrackStore<K, V> extends DelegatingStore<K, V> {
         }
 
         String addr = VersionMonitor.getAddr();
-        logger.info(addr + " Get " + key + " " + version.getVersion());
+        logger.info(addr + " Get " + key + " "
+                    + Arrays.toString(((VectorClock) version.getVersion()).toBytes()));
 
         return rValue;
     }

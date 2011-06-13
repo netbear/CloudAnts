@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import voldemort.versioning.ClockEntry;
+import voldemort.versioning.Occured;
 import voldemort.versioning.VectorClock;
 
 public class ClientNode {
@@ -55,9 +56,15 @@ public class ClientNode {
             newVersions.add(clientVersions.get(k).clone());
 
         version = new VectorClock(newVersions, System.currentTimeMillis());
+
+        for(AccessNode node: accesses) {
+            if(node.getVersion().compare(version) == Occured.AFTER) {
+                node.setDirty();
+            }
+        }
     }
 
-    public void traverseGraph() {
-
+    public void accept(GraphVisitor visitor) {
+        visitor.visit(this);
     }
 }
