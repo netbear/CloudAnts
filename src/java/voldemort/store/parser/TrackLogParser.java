@@ -27,7 +27,7 @@ public class TrackLogParser {
     public void init() {
         Map<ByteArray, List<AccessNode>> nodes = Maps.newHashMap();
         Map<String, ClientNode> clients = Maps.newHashMap();
-        Pattern p = Pattern.compile("\\[(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3})\\] INFO /(\\d+(?:\\.\\d+){3})\\:\\d+ ((?:Put)|(?:Get)) \\[(\\d+(?:\\, \\d+)+)\\] \\[(\\d+(?:\\, \\d+)+)\\]");
+        Pattern p = Pattern.compile("\\[(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3})\\] INFO /(\\d+(?:\\.\\d+){3})\\:\\d+ ((?:Put)|(?:Get)) \\[(\\-?\\d+(?:\\, \\-?\\d+)+)\\] \\[(\\-?\\d+(?:\\, \\-?\\d+)+)\\]");
 
         for(Integer id: logFiles.keySet()) {
             String path = logFiles.get(id);
@@ -36,10 +36,11 @@ public class TrackLogParser {
                 BufferedReader reader = new BufferedReader(new FileReader(logFile));
                 String line;
                 while((line = reader.readLine()) != null) {
+                    System.out.println(line);
                     Matcher m = p.matcher(line);
                     if(m.find()) {
-                        System.out.println(m.group(0) + "####" + m.group(1) + " " + m.group(2)
-                                           + " " + m.group(4));
+                        // System.out.println(m.group(0) + "####" + m.group(1) +
+                        // " " + m.group(2) + " " + m.group(4));
 
                         String[] keyParts = m.group(4).split(", ");
                         byte[] keys = new byte[keyParts.length];
@@ -54,6 +55,7 @@ public class TrackLogParser {
                             versions[i] = Byte.parseByte(versionParts[i]);
                         }
                         VectorClock version = new VectorClock(versions, 0);
+                        System.out.println(version.toString());
 
                         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss,SSS");
                         Date d = sdf.parse(m.group(1));
@@ -91,6 +93,9 @@ public class TrackLogParser {
                 }
             } catch(Exception e) {
                 System.out.println(e);
+                if(e instanceof NullPointerException) {
+                    throw (NullPointerException) e;
+                }
             }
         }
 

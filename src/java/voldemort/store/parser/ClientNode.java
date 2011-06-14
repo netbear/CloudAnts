@@ -15,6 +15,7 @@ public class ClientNode {
 
     public ClientNode(String client) {
         this.client = client;
+        accesses = new ArrayList<AccessNode>();
     }
 
     public String getClient() {

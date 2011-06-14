@@ -27,6 +27,7 @@ public class AccessNode {
         this.version = version;
         this.timestamp = timestamp;
         this.dirty = false;
+        successors = new ArrayList<AccessNode>();
     }
 
     public boolean addSuccessor(AccessNode node) {
