@@ -3,6 +3,7 @@ package voldemort.store.parser;
 import java.util.ArrayList;
 import java.util.List;
 
+import voldemort.utils.ByteUtils;
 import voldemort.versioning.ClockEntry;
 import voldemort.versioning.Occured;
 import voldemort.versioning.VectorClock;
@@ -15,11 +16,37 @@ public class ClientNode {
 
     public ClientNode(String client) {
         this.client = client;
+        version = new VectorClock();
         accesses = new ArrayList<AccessNode>();
+    }
+
+    public ClientNode(byte[] bytes, int offset) {
+        int length = bytes[offset + 1];
+        byte[] clientBytes = ByteUtils.copy(bytes, offset + 1, offset + length + 1);
+        String c = ByteUtils.getString(clientBytes, "UTF-8");
+        this.client = c;
+        this.version = new VectorClock(bytes, offset + 1 + length);
+
     }
 
     public String getClient() {
         return client;
+    }
+
+    public VectorClock getVersion() {
+        return version;
+    }
+
+    public int sizeInBytes() {
+        return client.length() + 1 + version.sizeInBytes();
+    }
+
+    public byte[] toBytes() {
+        byte[] clientBytes = ByteUtils.getBytes(client, "UTF=8");
+        byte[] serialized = ByteUtils.cat(new byte[] { (byte) client.length() },
+                                          clientBytes,
+                                          version.toBytes());
+        return serialized;
     }
 
     public void addAccess(AccessNode node) {
@@ -56,7 +83,9 @@ public class ClientNode {
         for(int k = j; k < versions.size(); k++)
             newVersions.add(clientVersions.get(k).clone());
 
-        version = new VectorClock(newVersions, System.currentTimeMillis());
+        long timestamp = Math.min(version.getTimestamp(), v.getTimestamp());
+
+        version = new VectorClock(newVersions, timestamp);
 
         for(AccessNode node: accesses) {
             if(node.getVersion().compare(version) == Occured.AFTER) {

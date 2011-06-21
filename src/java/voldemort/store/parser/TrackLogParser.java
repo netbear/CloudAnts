@@ -19,14 +19,36 @@ import com.google.common.collect.Maps;
 public class TrackLogParser {
 
     private Map<Integer, String> logFiles;
+    private Map<ByteArray, List<AccessNode>> nodes = null;
+    private Map<String, ClientNode> clients = null;
+    private Date intrusionDate = null;
+    private long lastCorrectTime = 0;
+    private VectorClock lastCorrectVersion = null;
+    private String client = null;
 
     public TrackLogParser(Map<Integer, String> files) {
         logFiles = files;
     }
 
+    public void setDate(Date d) {
+        intrusionDate = d;
+    }
+
+    public VectorClock getLastVersion() {
+        return lastCorrectVersion;
+    }
+
+    public void setClient(String c) {
+        client = c;
+    }
+
+    public String getClient() {
+        return client;
+    }
+
     public void init() {
-        Map<ByteArray, List<AccessNode>> nodes = Maps.newHashMap();
-        Map<String, ClientNode> clients = Maps.newHashMap();
+        nodes = Maps.newHashMap();
+        clients = Maps.newHashMap();
         Pattern p = Pattern.compile("\\[(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3})\\] INFO /(\\d+(?:\\.\\d+){3})\\:\\d+ ((?:Put)|(?:Get)) \\[(\\-?\\d+(?:\\, \\-?\\d+)+)\\] \\[(\\-?\\d+(?:\\, \\-?\\d+)+)\\]");
 
         for(Integer id: logFiles.keySet()) {
@@ -36,7 +58,7 @@ public class TrackLogParser {
                 BufferedReader reader = new BufferedReader(new FileReader(logFile));
                 String line;
                 while((line = reader.readLine()) != null) {
-                    System.out.println(line);
+                    // System.out.println(line);
                     Matcher m = p.matcher(line);
                     if(m.find()) {
                         // System.out.println(m.group(0) + "####" + m.group(1) +
@@ -60,7 +82,13 @@ public class TrackLogParser {
                         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss,SSS");
                         Date d = sdf.parse(m.group(1));
                         long timestamp = d.getTime();
+                        if(this.intrusionDate != null && this.intrusionDate.getTime() > timestamp
+                           && timestamp > this.lastCorrectTime) {
+                            this.lastCorrectTime = timestamp;
+                            this.lastCorrectVersion = version;
+                        }
                         String client = m.group(2);
+
                         if(!clients.containsKey(client)) {
                             ClientNode cNode = new ClientNode(client);
                             clients.put(client, cNode);
@@ -99,5 +127,17 @@ public class TrackLogParser {
             }
         }
 
+    }
+
+    public Map<String, ClientNode> getClientNode() {
+        return clients;
+    }
+
+    public void updateClientNode(List<ClientNode> clientList) {
+        for(ClientNode c: clientList) {
+            if(clients.containsKey(c.getClient())) {
+                clients.get(c.getClient()).setVersion(c.getVersion());
+            }
+        }
     }
 }
