@@ -16,7 +16,7 @@ public class ClientNode {
 
     public ClientNode(String client) {
         this.client = client;
-        version = new VectorClock();
+        version = null;
         accesses = new ArrayList<AccessNode>();
     }
 
@@ -56,36 +56,41 @@ public class ClientNode {
     }
 
     public void setVersion(VectorClock v) {
-        List<ClockEntry> versions = v.getEntries();
-        List<ClockEntry> clientVersions = version.getEntries();
-        List<ClockEntry> newVersions = new ArrayList<ClockEntry>();
-        int i = 0;
-        int j = 0;
-        while(i < versions.size() && j < clientVersions.size()) {
-            ClockEntry v1 = versions.get(i);
-            ClockEntry v2 = clientVersions.get(j);
-            if(v1.getNodeId() == v2.getNodeId()) {
-                newVersions.add(new ClockEntry(v1.getNodeId(), Math.min(v1.getVersion(),
-                                                                        v2.getVersion())));
-                i++;
-                j++;
-            } else if(v1.getNodeId() < v2.getNodeId()) {
-                newVersions.add(v1.clone());
-                i++;
-            } else {
-                newVersions.add(v2.clone());
-                j++;
+        if(version == null) {
+            version = v;
+        } else {
+            System.out.println("current version :" + version + " new version : " + v);
+            List<ClockEntry> versions = v.getEntries();
+            List<ClockEntry> clientVersions = version.getEntries();
+            List<ClockEntry> newVersions = new ArrayList<ClockEntry>();
+            int i = 0;
+            int j = 0;
+            while(i < versions.size() && j < clientVersions.size()) {
+                ClockEntry v1 = versions.get(i);
+                ClockEntry v2 = clientVersions.get(j);
+                if(v1.getNodeId() == v2.getNodeId()) {
+                    newVersions.add(new ClockEntry(v1.getNodeId(), Math.min(v1.getVersion(),
+                                                                            v2.getVersion())));
+                    i++;
+                    j++;
+                } else if(v1.getNodeId() < v2.getNodeId()) {
+                    newVersions.add(v1.clone());
+                    i++;
+                } else {
+                    newVersions.add(v2.clone());
+                    j++;
+                }
             }
+
+            // for(int k = i; k < versions.size(); k++)
+            // newVersions.add(versions.get(k).clone());
+            // for(int k = j; k < clientVersions.size(); k++)
+            // newVersions.add(clientVersions.get(k).clone());
+
+            long timestamp = Math.min(version.getTimestamp(), v.getTimestamp());
+
+            version = new VectorClock(newVersions, timestamp);
         }
-
-        for(int k = i; k < versions.size(); k++)
-            newVersions.add(versions.get(k).clone());
-        for(int k = j; k < clientVersions.size(); k++)
-            newVersions.add(clientVersions.get(k).clone());
-
-        long timestamp = Math.min(version.getTimestamp(), v.getTimestamp());
-
-        version = new VectorClock(newVersions, timestamp);
 
         for(AccessNode node: accesses) {
             if(node.getVersion().compare(version) == Occured.AFTER) {

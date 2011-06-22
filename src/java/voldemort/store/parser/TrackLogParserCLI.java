@@ -23,7 +23,7 @@ public class TrackLogParserCLI {
         files.put(0, args[0]);
 
         System.out.println("client: " + args[1]);
-        System.out.println("date: " + args[2]);
+
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss,SSS");
         Date d = null;
         try {
@@ -32,6 +32,7 @@ public class TrackLogParserCLI {
             e.printStackTrace();
         }
         String client = args[1];
+        System.out.println("date: " + d);
 
         TrackLogParser parser = new TrackLogParser(files);
         parser.setDate(d);

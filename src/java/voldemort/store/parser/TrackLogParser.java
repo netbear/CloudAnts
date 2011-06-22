@@ -85,6 +85,7 @@ public class TrackLogParser {
                         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss,SSS");
                         Date d = sdf.parse(m.group(1));
                         long timestamp = d.getTime();
+
                         if(this.intrusionDate != null && this.intrusionDate.getTime() > timestamp
                            && timestamp > this.lastCorrectTime) {
                             this.lastCorrectTime = timestamp;
