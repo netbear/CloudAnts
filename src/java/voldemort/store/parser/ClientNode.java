@@ -80,7 +80,7 @@ public class ClientNode {
 
         for(int k = i; k < versions.size(); k++)
             newVersions.add(versions.get(k).clone());
-        for(int k = j; k < versions.size(); k++)
+        for(int k = j; k < clientVersions.size(); k++)
             newVersions.add(clientVersions.get(k).clone());
 
         long timestamp = Math.min(version.getTimestamp(), v.getTimestamp());
@@ -92,6 +92,11 @@ public class ClientNode {
                 node.setDirty();
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        return client + " " + version;
     }
 
     public void accept(GraphVisitor visitor) {

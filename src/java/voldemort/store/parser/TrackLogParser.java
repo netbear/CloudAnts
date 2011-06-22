@@ -35,7 +35,10 @@ public class TrackLogParser {
     }
 
     public VectorClock getLastVersion() {
-        return lastCorrectVersion;
+        if(lastCorrectVersion != null)
+            return lastCorrectVersion;
+        else
+            return new VectorClock(0);
     }
 
     public void setClient(String c) {
@@ -77,7 +80,7 @@ public class TrackLogParser {
                             versions[i] = Byte.parseByte(versionParts[i]);
                         }
                         VectorClock version = new VectorClock(versions, 0);
-                        System.out.println(version.toString());
+                        // System.out.println(version.toString());
 
                         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss,SSS");
                         Date d = sdf.parse(m.group(1));
