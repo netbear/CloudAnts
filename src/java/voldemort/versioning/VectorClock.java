@@ -343,4 +343,35 @@ public class VectorClock implements Version, Serializable {
         return this.versions;
     }
 
+    public static VectorClock forwardMerge(VectorClock vc1, VectorClock vc2) {
+        if(vc1 == null)
+            return vc2;
+        if(vc2 == null)
+            return vc1;
+        List<ClockEntry> versions1 = vc1.getEntries();
+        List<ClockEntry> versions2 = vc2.getEntries();
+        List<ClockEntry> newVersions = new ArrayList<ClockEntry>();
+        int i = 0;
+        int j = 0;
+        while(i < versions1.size() && j < versions2.size()) {
+            ClockEntry v1 = versions1.get(i);
+            ClockEntry v2 = versions2.get(j);
+            if(v1.getNodeId() == v2.getNodeId()) {
+                newVersions.add(new ClockEntry(v1.getNodeId(), Math.min(v1.getVersion(),
+                                                                        v2.getVersion())));
+                i++;
+                j++;
+            } else if(v1.getNodeId() < v2.getNodeId()) {
+                newVersions.add(v1.clone());
+                i++;
+            } else {
+                newVersions.add(v2.clone());
+                j++;
+            }
+        }
+
+        long timestamp = Math.min(vc1.getTimestamp(), vc2.getTimestamp());
+        return new VectorClock(newVersions, timestamp);
+    }
+
 }

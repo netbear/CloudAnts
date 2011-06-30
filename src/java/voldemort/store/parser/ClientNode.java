@@ -1,10 +1,8 @@
 package voldemort.store.parser;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import voldemort.utils.ByteUtils;
-import voldemort.versioning.ClockEntry;
 import voldemort.versioning.Occured;
 import voldemort.versioning.VectorClock;
 
@@ -17,6 +15,12 @@ public class ClientNode {
     public ClientNode(String client) {
         this.client = client;
         version = null;
+        accesses = new ArrayList<AccessNode>();
+    }
+
+    public ClientNode(String client, VectorClock version) {
+        this.client = client;
+        this.version = version;
         accesses = new ArrayList<AccessNode>();
     }
 
@@ -60,42 +64,30 @@ public class ClientNode {
         }
     }
 
-    public void setVersion(VectorClock v) {
+    public boolean setVersion(VectorClock v) {
+        boolean isUpdated = true;
         if(version == null) {
             version = v;
+            if(v == null)
+                isUpdated = false;
         } else {
-            // System.out.println("current version :" + version +
-            // " new version : " + v);
-            List<ClockEntry> versions = v.getEntries();
-            List<ClockEntry> clientVersions = version.getEntries();
-            List<ClockEntry> newVersions = new ArrayList<ClockEntry>();
-            int i = 0;
-            int j = 0;
-            while(i < versions.size() && j < clientVersions.size()) {
-                ClockEntry v1 = versions.get(i);
-                ClockEntry v2 = clientVersions.get(j);
-                if(v1.getNodeId() == v2.getNodeId()) {
-                    newVersions.add(new ClockEntry(v1.getNodeId(), Math.min(v1.getVersion(),
-                                                                            v2.getVersion())));
-                    i++;
-                    j++;
-                } else if(v1.getNodeId() < v2.getNodeId()) {
-                    newVersions.add(v1.clone());
-                    i++;
-                } else {
-                    newVersions.add(v2.clone());
-                    j++;
+
+            VectorClock newVersion = VectorClock.forwardMerge(version, v);
+
+            if(version.getEntries().size() == newVersion.getEntries().size()) {
+                isUpdated = false;
+                for(int k = 0; k < newVersion.getEntries().size(); k++) {
+                    if(!version.getEntries().get(k).equals(newVersion.getEntries().get(k))) {
+                        // System.out.println("different version " +
+                        // version.getEntries().get(k) + " "
+                        // + newVersion.getEntries().get(k));
+                        isUpdated = true;
+                        break;
+                    }
                 }
             }
 
-            // for(int k = i; k < versions.size(); k++)
-            // newVersions.add(versions.get(k).clone());
-            // for(int k = j; k < clientVersions.size(); k++)
-            // newVersions.add(clientVersions.get(k).clone());
-
-            long timestamp = Math.min(version.getTimestamp(), v.getTimestamp());
-
-            version = new VectorClock(newVersions, timestamp);
+            version = newVersion;
         }
 
         for(AccessNode node: accesses) {
@@ -103,6 +95,8 @@ public class ClientNode {
                 node.setDirty();
             }
         }
+
+        return isUpdated;
     }
 
     @Override
