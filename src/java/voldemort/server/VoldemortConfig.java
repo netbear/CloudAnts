@@ -120,6 +120,7 @@ public class VoldemortConfig implements Serializable {
     private boolean enableNetworkClassLoader;
     private boolean enableGossip;
     private boolean enableRebalanceService;
+    private boolean enableTrack;
 
     private List<String> storageConfigurations;
 
@@ -161,6 +162,9 @@ public class VoldemortConfig implements Serializable {
     private int rebalancingTimeoutInSeconds;
     private int rebalancingServicePeriod;
     private int maxParallelStoresRebalancing;
+    private int analyzerBufferSize;
+    private int analyzerMaxConnections;
+    private int analyzerPort;
 
     public VoldemortConfig(Properties props) {
         this(new Props(props));
@@ -256,6 +260,11 @@ public class VoldemortConfig implements Serializable {
         this.enableRedirectRouting = props.getBoolean("enable.redirect.routing", true);
         this.enableGossip = props.getBoolean("enable.gossip", false);
         this.enableRebalanceService = props.getBoolean("enable.rebalancing", true);
+        this.enableTrack = props.getBoolean("enable.track", true);
+
+        this.analyzerBufferSize = props.getInt("analyzer.buffersize", 64000);
+        this.analyzerMaxConnections = props.getInt("analyzer.max.connections", 4);
+        this.analyzerPort = props.getInt("analyzer.port", 7000);
 
         this.gossipInterval = props.getInt("gossip.interval.ms", 30 * 1000);
         this.pusherPollMs = props.getInt("pusher.poll.ms", 2 * 60 * 1000);
@@ -1084,6 +1093,10 @@ public class VoldemortConfig implements Serializable {
         return enableGossip;
     }
 
+    public boolean isTrackEanbled() {
+        return enableTrack;
+    }
+
     public void setEnableGossip(boolean enableGossip) {
         this.enableGossip = enableGossip;
     }
@@ -1102,6 +1115,18 @@ public class VoldemortConfig implements Serializable {
 
     public void setEnableNetworkClassLoader(boolean enableNetworkClassLoader) {
         this.enableNetworkClassLoader = enableNetworkClassLoader;
+    }
+
+    public int getAnalyzerBufferSize() {
+        return this.analyzerBufferSize;
+    }
+
+    public int getAnalyzerMaxConnections() {
+        return this.analyzerMaxConnections;
+    }
+
+    public int getAnalyzerPort() {
+        return this.analyzerPort;
     }
 
     public int getRebalancingServicePeriod() {

@@ -41,7 +41,7 @@ public class TrackLogParserCLI {
         AnalyzerServer server = new AnalyzerServer(8800, 4, 64000);
         server.start();
         AnalyzerMaster master = new AnalyzerMaster(new ClientConfig(), parser);
-        master.addDestination("127.0.0.1", 8800);
+        master.addDestination("127.0.0.1", 7000);
 
         try {
             master.init();

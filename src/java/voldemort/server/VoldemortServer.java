@@ -42,6 +42,7 @@ import voldemort.server.rebalance.RebalancerService;
 import voldemort.server.scheduler.SchedulerService;
 import voldemort.server.socket.SocketService;
 import voldemort.server.storage.StorageService;
+import voldemort.store.analyzer.AnalyzerService;
 import voldemort.store.configuration.ConfigurationStorageEngine;
 import voldemort.store.metadata.MetadataStore;
 import voldemort.utils.RebalanceUtils;
@@ -198,6 +199,12 @@ public class VoldemortServer extends AbstractService {
 
         if(voldemortConfig.isJmxEnabled())
             services.add(new JmxService(this, this.metadata.getCluster(), storeRepository, services));
+
+        if(voldemortConfig.isTrackEanbled()) {
+            services.add(new AnalyzerService(voldemortConfig.getAnalyzerPort(),
+                                             voldemortConfig.getAnalyzerMaxConnections(),
+                                             voldemortConfig.getAnalyzerBufferSize()));
+        }
 
         return ImmutableList.copyOf(services);
     }

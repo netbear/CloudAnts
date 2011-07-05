@@ -401,7 +401,6 @@ public class MetadataStore implements StorageEngine<ByteArray, byte[]> {
     }
 
     private void initCache(String key, Object defaultValue) {
-        logger.info("Init Cache " + key);
         try {
             initCache(key);
         } catch(Exception e) {

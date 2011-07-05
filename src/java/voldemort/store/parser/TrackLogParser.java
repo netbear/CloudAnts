@@ -1,8 +1,10 @@
 package voldemort.store.parser;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -12,6 +14,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import voldemort.utils.ByteArray;
+import voldemort.utils.ByteUtils;
 import voldemort.versioning.VectorClock;
 
 import com.google.common.collect.Maps;
@@ -50,6 +53,7 @@ public class TrackLogParser {
     }
 
     public void init() {
+        File debugFile = new File("debugFile");
         nodes = Maps.newHashMap();
         clients = Maps.newHashMap();
         Pattern p = Pattern.compile("\\[(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3})\\] INFO /(\\d+(?:\\.\\d+){3})\\:\\d+ ((?:Put)|(?:Get)) \\[(\\-?\\d+(?:\\, \\-?\\d+)+)\\] \\[(\\-?\\d+(?:\\, \\-?\\d+)+)\\]");
@@ -59,6 +63,7 @@ public class TrackLogParser {
             File logFile = new File(path);
             try {
                 BufferedReader reader = new BufferedReader(new FileReader(logFile));
+                BufferedWriter debug = new BufferedWriter(new FileWriter(debugFile));
                 String line;
                 while((line = reader.readLine()) != null) {
                     // System.out.println(line);
@@ -105,6 +110,9 @@ public class TrackLogParser {
                             accType = AccessType.GET;
                         }
 
+                        debug.write(client + ": " + accType + " "
+                                    + ByteUtils.getString(keys, "UTF-8") + " " + version + "\n");
+
                         AccessNode node = new AccessNode(accType, client, key, version, timestamp);
                         node.addClientNode(clients.get(client));
                         clients.get(client).addAccess(node);
@@ -123,6 +131,7 @@ public class TrackLogParser {
 
                     }
                 }
+                debug.close();
             } catch(Exception e) {
                 System.out.println(e);
                 if(e instanceof NullPointerException) {
