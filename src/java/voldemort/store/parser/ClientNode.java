@@ -99,6 +99,10 @@ public class ClientNode {
         return isUpdated;
     }
 
+    public ArrayList<AccessNode> getClientOp() {
+        return accesses;
+    }
+
     @Override
     public String toString() {
         return client + " " + version;

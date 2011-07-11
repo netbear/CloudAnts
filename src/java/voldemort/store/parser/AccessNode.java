@@ -83,6 +83,10 @@ public class AccessNode {
         return version;
     }
 
+    public ByteArray getKey() {
+        return key;
+    }
+
     public void accept(GraphVisitor visitor) {
         visitor.visit(this);
     }

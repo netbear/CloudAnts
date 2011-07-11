@@ -56,7 +56,7 @@ public class TrackLogParser {
         File debugFile = new File("debugFile");
         nodes = Maps.newHashMap();
         clients = Maps.newHashMap();
-        Pattern p = Pattern.compile("\\[(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3})\\] INFO /(\\d+(?:\\.\\d+){3})\\:\\d+ ((?:Put)|(?:Get)) \\[(\\-?\\d+(?:\\, \\-?\\d+)+)\\] \\[(\\-?\\d+(?:\\, \\-?\\d+)+)\\]");
+        Pattern p = Pattern.compile("\\[(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3})\\] INFO /(\\d+(?:\\.\\d+){3})\\:\\d+ ((?:Put)|(?:Get)) \\[(\\-?\\d+(?:\\, \\-?\\d+)*)\\] \\[(\\-?\\d+(?:\\, \\-?\\d+)*)\\]");
 
         for(Integer id: logFiles.keySet()) {
             String path = logFiles.get(id);
