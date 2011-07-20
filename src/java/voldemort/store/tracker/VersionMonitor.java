@@ -35,6 +35,7 @@ public class VersionMonitor {
     private final SocketPool socketPool;
     private Map<Integer, Store<ByteArray, byte[]>> serverMapping;
     private static final ThreadLocal<String> clientAddr = new ThreadLocal<String>();
+    public VersionMonitorServer monitorServer;
 
     public VersionMonitor(MetadataStore meta, ClientConfig config) {
         metaStore = meta;
@@ -44,6 +45,7 @@ public class VersionMonitor {
                                     config.getSocketBufferSize(),
                                     config.getSocketKeepAlive());
         serverMapping = Maps.newHashMap();
+        monitorServer = VersionMonitorServer.getServerInstance(meta, 6600, 10, 1000, 64000);
         init();
     }
 
@@ -69,6 +71,8 @@ public class VersionMonitor {
                                                                  RequestRoutingType.IGNORE_CHECKS);
                 serverMapping.put(node.getId(), store);
             }
+        if(!monitorServer.isAlive())
+            monitorServer.start();
     }
 
     public Versioned<byte[]> getClusterVersion() {
@@ -80,7 +84,6 @@ public class VersionMonitor {
                                                                     .get(0)
                                                                     .getValue(), "UTF-8");
             versions.add(new ClockEntry(nodeId.shortValue(), Long.parseLong(serverVersion)));
-            // logger.info("Version Monitor :" + nodeid);
         }
         String localVersion = ByteUtils.getString(metaStore.get(MetadataStore.SERVER_VERSION)
                                                            .get(0)
@@ -103,4 +106,5 @@ public class VersionMonitor {
                                                          version);
         return rValue;
     }
+
 }

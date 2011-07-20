@@ -39,7 +39,9 @@ public class TrackStore<K, V> extends DelegatingStore<K, V> {
      */
     public TrackStore(Store<K, V> innerStore, MetadataStore metaStore) {
         super(innerStore);
+        // Try not to synchronize here
         newKeySet = Collections.synchronizedSet(new HashSet<K>());
+        // newKeySet = new HashSet<K>();
         this.metaData = metaStore;
         monitor = new VersionMonitor(metaData, new ClientConfig());
         nodeId = metaData.getNodeId();
@@ -59,6 +61,7 @@ public class TrackStore<K, V> extends DelegatingStore<K, V> {
         if(newKeySet.contains(key)) {
             synchronized(keyCacheLock) {
                 if(newKeySet.contains(key)) {
+
                     version = monitor.getClusterVersion();
                     VectorClock clock = (VectorClock) version.getVersion();
                     clock.incrementVersion(nodeId, System.currentTimeMillis());
@@ -98,6 +101,7 @@ public class TrackStore<K, V> extends DelegatingStore<K, V> {
         String addr = VersionMonitor.getAddr();
         logger.info(addr + " Get " + key + " "
                     + Arrays.toString(((VectorClock) version.getVersion()).toBytes()));
+        System.out.println("VersionMonitorServer : " + monitor.monitorServer.getClusterVersion());
 
         return rValue;
     }
@@ -115,6 +119,8 @@ public class TrackStore<K, V> extends DelegatingStore<K, V> {
         synchronized(keyCacheLock) {
             newKeySet.add(key);
             keySources.put(key, addr);
+            monitor.monitorServer.incLocalClock();
+            System.out.println("new clock:" + monitor.monitorServer.getLocalClock());
         }
     }
 }
