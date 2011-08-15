@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 
 import voldemort.VoldemortException;
 import voldemort.annotations.jmx.JmxOperation;
+import voldemort.client.ClientConfig;
 import voldemort.client.protocol.RequestFormatType;
 import voldemort.client.protocol.admin.AdminClient;
 import voldemort.cluster.Cluster;
@@ -45,6 +46,7 @@ import voldemort.server.storage.StorageService;
 import voldemort.store.analyzer.AnalyzerService;
 import voldemort.store.configuration.ConfigurationStorageEngine;
 import voldemort.store.metadata.MetadataStore;
+import voldemort.store.tracker.VersionMonitor;
 import voldemort.utils.RebalanceUtils;
 import voldemort.utils.SystemTime;
 import voldemort.utils.Utils;
@@ -205,6 +207,8 @@ public class VoldemortServer extends AbstractService {
                                              voldemortConfig.getAnalyzerMaxConnections(),
                                              voldemortConfig.getAnalyzerBufferSize()));
         }
+
+        services.add(new VersionMonitor(metadata, new ClientConfig()));
 
         return ImmutableList.copyOf(services);
     }

@@ -16,6 +16,7 @@ public enum ServiceType {
     ASYNC_SCHEDULER("async-scheduler"),
     GOSSIP("gossip-service"),
     REBALANCE("rebalance-service"),
+    VERSION_MONITOR("version-monitor"),
     ANALYZER("log-analyzer");
 
     private final String display;

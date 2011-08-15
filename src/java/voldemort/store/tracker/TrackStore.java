@@ -1,21 +1,18 @@
 package voldemort.store.tracker;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
 
 import voldemort.VoldemortException;
-import voldemort.client.ClientConfig;
 import voldemort.store.DelegatingStore;
 import voldemort.store.Store;
 import voldemort.store.metadata.MetadataStore;
-import voldemort.utils.ByteArray;
-import voldemort.utils.ByteUtils;
 import voldemort.versioning.VectorClock;
 import voldemort.versioning.Versioned;
 
@@ -23,14 +20,25 @@ import com.google.common.collect.Maps;
 
 public class TrackStore<K, V> extends DelegatingStore<K, V> {
 
+    private class KeyAccess {
+
+        public String addr;
+        public long clock;
+
+        public KeyAccess(String addr, long clock) {
+            this.addr = addr;
+            this.clock = clock;
+        }
+    }
+
     private static final Logger logger = Logger.getLogger(TrackStore.class.getName());
-    private Set<K> newKeySet;
-    private Map<K, String> keySources;
+
+    private Map<K, KeyAccess> keyUpdates;
     private final MetadataStore metaData;
-    private static final String CLUSTER_VERSION = "server.version";
     private VersionMonitor monitor;
     private Object keyCacheLock = new Object();
     private int nodeId;
+    private Timer timer;
 
     /**
      * Create a BackTracker
@@ -40,68 +48,72 @@ public class TrackStore<K, V> extends DelegatingStore<K, V> {
     public TrackStore(Store<K, V> innerStore, MetadataStore metaStore) {
         super(innerStore);
         // Try not to synchronize here
-        newKeySet = Collections.synchronizedSet(new HashSet<K>());
-        // newKeySet = new HashSet<K>();
         this.metaData = metaStore;
-        monitor = new VersionMonitor(metaData, new ClientConfig());
+        // monitor = new VersionMonitor(metaData, new ClientConfig());
         nodeId = metaData.getNodeId();
-        keySources = Maps.newHashMap();
+        keyUpdates = Maps.newLinkedHashMap();
+
+        TimerTask scheduleTask = new TimerTask() {
+
+            @Override
+            public void run() {
+                synchronized(keyCacheLock) {
+                    flushPutRecords();
+                }
+            }
+        };
+
+        timer = new Timer();
+        timer.schedule(scheduleTask, 1000, 1000);
+    }
+
+    /*
+     * This method is not synchronized, caller should provide guarantees that
+     * execution is inside particular critical section.
+     */
+    public void flushPutRecords() {
+        if(keyUpdates.isEmpty())
+            return;
+
+        VersionMonitorServer mServer = VersionMonitorServer.getServerInstance();
+        if(mServer == null)
+            throw new VoldemortException("Version Monitor Server should not be null!");
+        mServer.updateClusterClock();
+        Iterator<Entry<K, KeyAccess>> iter = keyUpdates.entrySet().iterator();
+        while(iter.hasNext()) {
+            Entry<K, KeyAccess> ac = iter.next();
+            VectorClock version = mServer.getClusterVersion(ac.getValue().clock);
+            logger.info(ac.getValue().addr + " Put " + ac.getKey() + " " + version);
+        }
+        keyUpdates.clear();
     }
 
     @Override
     public List<Versioned<V>> get(K key) throws VoldemortException {
         List<Versioned<V>> rValue;
-        Versioned<byte[]> version;
+        // Versioned<byte[]> version;
         try {
             rValue = super.get(key);
         } catch(VoldemortException e) {
             throw e;
         }
 
-        if(newKeySet.contains(key)) {
-            synchronized(keyCacheLock) {
-                if(newKeySet.contains(key)) {
-
-                    version = monitor.getClusterVersion();
-                    VectorClock clock = (VectorClock) version.getVersion();
-                    clock.incrementVersion(nodeId, System.currentTimeMillis());
-
-                    for(K k: newKeySet) {
-                        String addr = keySources.get(k);
-                        logger.info(addr
-                                    + " Put "
-                                    + k
-                                    + " "
-                                    + Arrays.toString(((VectorClock) version.getVersion()).toBytes()));
-                    }
-
-                    newKeySet.clear();
-                    keySources.clear();
-                    /*
-                     * TODO: Write back server version
-                     */
-                    long serverVersion = Long.parseLong(ByteUtils.getString(version.getValue(),
-                                                                            "UTF-8"));
-                    serverVersion++;
-
-                    ByteArray keyBytes = new ByteArray(ByteUtils.getBytes(MetadataStore.SERVER_VERSION,
-                                                                          "UTF-8"));
-                    Versioned<byte[]> newVersion = new Versioned<byte[]>(ByteUtils.getBytes(Long.toString(serverVersion),
-                                                                                            "UTF-8"),
-                                                                         clock);
-                    metaData.put(keyBytes, newVersion);
-                } else
-                    version = metaData.get(CLUSTER_VERSION).get(0);
-            }
-        } else {
-
-            version = metaData.get(CLUSTER_VERSION).get(0);
-        }
-
         String addr = VersionMonitor.getAddr();
-        logger.info(addr + " Get " + key + " "
-                    + Arrays.toString(((VectorClock) version.getVersion()).toBytes()));
-        System.out.println("VersionMonitorServer : " + monitor.monitorServer.getClusterVersion());
+        // logger.info(addr + " Get " + key + " "
+        // + Arrays.toString(((VectorClock) version.getVersion()).toBytes()));
+
+        if(keyUpdates.keySet().contains(key)) {
+            synchronized(keyCacheLock) {
+                if(keyUpdates.keySet().contains(key)) {
+                    flushPutRecords();
+                }
+            }
+        }
+        VersionMonitorServer mServer = VersionMonitorServer.getServerInstance();
+        if(mServer == null)
+            throw new VoldemortException("Version Monitor Server should not be null!");
+
+        logger.info(addr + " Get " + key + " " + mServer.getClusterVersion());
 
         return rValue;
     }
@@ -115,12 +127,14 @@ public class TrackStore<K, V> extends DelegatingStore<K, V> {
         }
 
         String addr = VersionMonitor.getAddr();
+        VersionMonitorServer mServer = VersionMonitorServer.getServerInstance();
+        if(mServer == null)
+            throw new VoldemortException("Version Monitor Server should not be null!");
 
         synchronized(keyCacheLock) {
-            newKeySet.add(key);
-            keySources.put(key, addr);
-            monitor.monitorServer.incLocalClock();
-            System.out.println("new clock:" + monitor.monitorServer.getLocalClock());
+
+            long clock = mServer.incLocalClock();
+            keyUpdates.put(key, new KeyAccess(addr, clock));
         }
     }
 }

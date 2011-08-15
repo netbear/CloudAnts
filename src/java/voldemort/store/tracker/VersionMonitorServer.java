@@ -6,6 +6,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -71,6 +72,16 @@ public class VersionMonitorServer extends Thread {
     private Object clusterClockLock = new Object();
     private Object localClockLock = new Object();
     private AtomicBoolean isInit = new AtomicBoolean(false);
+
+    // private static final ThreadLocal<String> clientAddr = new
+    // ThreadLocal<String>();
+
+    public static VersionMonitorServer getServerInstance() {
+        if(serverInstance != null)
+            return serverInstance;
+        else
+            return null;
+    }
 
     public static VersionMonitorServer getServerInstance(MetadataStore metaStore,
                                                          int port,
@@ -159,7 +170,9 @@ public class VersionMonitorServer extends Thread {
     }
 
     public void shutdown() {
-        writeBackClock();
+        logger.info("Shutting down CloudAnts VersionMonitor");
+
+        interrupt();
 
         try {
             if(!serverSocket.isClosed()) {
@@ -167,6 +180,8 @@ public class VersionMonitorServer extends Thread {
             }
         } catch(IOException e) {
             logger.error("Error while closing socket server: " + e.getMessage());
+        } finally {
+            writeBackClock();
         }
     }
 
@@ -180,7 +195,7 @@ public class VersionMonitorServer extends Thread {
 
     public void setClusterClock(int node, long clock) {
         synchronized(clusterClockLock) {
-            logger.info("Set " + node + " " + clock);
+            // logger.info("Set " + node + " " + clock);
             clusterClock.put(node, clock);
         }
     }
@@ -224,16 +239,28 @@ public class VersionMonitorServer extends Thread {
 
                 logger.info("nego protocol");
                 negotiateProtocol(inputStream, outputStream);
-                int node = inputStream.readInt();
-                long clock = inputStream.readLong();
-                server.setClusterClock(node, clock);
+                while(true) {
+                    int node = inputStream.readInt();
+                    long clock = inputStream.readLong();
+                    server.setClusterClock(node, clock);
 
-                logger.info("sending local clock");
-                outputStream.writeInt(localNode);
-                outputStream.writeLong(server.getLocalClock());
-                outputStream.flush();
+                    // logger.info("sending local clock");
+                    outputStream.writeInt(localNode);
+                    outputStream.writeLong(server.getLocalClock());
+                    outputStream.flush();
+                }
 
-            } catch(IOException ex) {}
+            } catch(EOFException ex) {
+                logger.info("Ending Incoming Request Handler");
+            } catch(IOException ex) {
+                logger.info(ex);
+            } finally {
+                try {
+                    socket.close();
+                } catch(IOException e) {
+                    logger.warn("Error while shutting down incoming request socket.", e);
+                }
+            }
         }
 
         private RequestFormatType negotiateProtocol(InputStream input, OutputStream output)
@@ -275,21 +302,24 @@ public class VersionMonitorServer extends Thread {
             SocketAndStreams sas = socketPool.checkout(dest);
 
             try {
+                // logger.info("Outgoing : write");
                 sas.getOutputStream().writeInt(server.getNode());
                 sas.getOutputStream().writeLong(server.getLocalClock());
+                // logger.info("Outgoing : flush");
                 sas.getOutputStream().flush();
 
-                logger.info("reading cluster version");
+                // logger.info("Outgoing : reading cluster version");
                 int node = sas.getInputStream().readInt();
                 long clock = sas.getInputStream().readLong();
-                logger.info("Setting cluster clock");
+                // logger.info("Outgoing : set Cluster clock");
                 server.setClusterClock(node, clock);
 
-            } catch(IOException e) {}
+            } catch(IOException e) {
+                logger.error(e);
+            }
 
-            logger.info("check in socket");
             socketPool.checkin(dest, sas);
-            logger.info("OutgoinRequest handler end!");
+            // logger.info("OutgoinRequest handler end!");
         }
     }
 
@@ -363,7 +393,7 @@ public class VersionMonitorServer extends Thread {
     }
 
     public VectorClock getClusterVersion(long clock) {
-        logger.info("Get cluster version");
+        // logger.info("Get cluster version");
         Object initLock = new Object();
         if(isInit.get() == false) {
             synchronized(initLock) {
@@ -373,8 +403,7 @@ public class VersionMonitorServer extends Thread {
                     logger.info("already init");
                 isInit.set(true);
             }
-        } else
-            logger.info("no need to update");
+        }
 
         List<ClockEntry> versions = this.getClusterClock();
 
