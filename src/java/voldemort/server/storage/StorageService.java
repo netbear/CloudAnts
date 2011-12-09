@@ -266,9 +266,11 @@ public class StorageService extends AbstractService {
             }
         }
 
-        TrackStore<ByteArray, byte[]> trackStore = new TrackStore<ByteArray, byte[]>(store,
-                                                                                     metadata);
-        store = trackStore;
+        if(voldemortConfig.isTrackEanbled()) {
+            TrackStore<ByteArray, byte[]> trackStore = new TrackStore<ByteArray, byte[]>(store,
+                                                                                         metadata);
+            store = trackStore;
+        }
 
         storeRepository.addLocalStore(store);
     }

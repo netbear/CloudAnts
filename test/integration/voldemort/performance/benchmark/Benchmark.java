@@ -90,6 +90,7 @@ public class Benchmark {
     public static final String HELP = "help";
     public static final String STORE_NAME = "store-name";
     public static final String RECORD_COUNT = "record-count";
+    public static final String MAX_KEY = "max-key";
     public static final String OPS_COUNT = "ops-count";
     public static final String METRIC_TYPE = "metric-type";
     public static final String HISTOGRAM_METRIC_TYPE = "histogram";
@@ -511,6 +512,7 @@ public class Benchmark {
         parser.accepts(OPS_COUNT, "number of operations to do")
               .withRequiredArg()
               .ofType(Integer.class);
+        parser.accepts(MAX_KEY, "max key number").withRequiredArg().ofType(Integer.class);
         parser.accepts(URL, "url on which to run remote tests").withRequiredArg();
         parser.accepts(STORE_NAME, "store name on the remote URL").withRequiredArg();
         parser.accepts(METRIC_TYPE, "type of metric [histogram | summary]").withRequiredArg();
@@ -577,6 +579,12 @@ public class Benchmark {
                                                    InMemoryStorageConfiguration.TYPE_NAME));
                 }
 
+            }
+
+            if(options.has(MAX_KEY)) {
+                mainProps.put(MAX_KEY, (Integer) options.valueOf(MAX_KEY));
+            } else {
+                mainProps.put(MAX_KEY, 1000);
             }
 
             // Parse Record_Count

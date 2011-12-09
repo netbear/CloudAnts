@@ -267,6 +267,7 @@ public class Workload {
         String keyType = props.getString(Benchmark.KEY_TYPE, Benchmark.STRING_KEY_TYPE);
         String recordSelection = props.getString(Benchmark.RECORD_SELECTION,
                                                  Benchmark.UNIFORM_RECORD_SELECTION);
+        int maxKey = props.getInt(Benchmark.MAX_KEY, 1000);
 
         double readProportion = (double) readPercent / (double) 100;
         double writeProportion = (double) writePercent / (double) 100;
@@ -319,9 +320,10 @@ public class Workload {
         if(recordCount > 0) {
             insertKeySequence = new CounterGenerator(recordCount);
         } else {
-            Random randomizer = new Random();
-            insertKeySequence = new CounterGenerator(randomizer.nextInt(Integer.MAX_VALUE));
-
+            // Random randomizer = new Random();
+            // insertKeySequence = new
+            // CounterGenerator(randomizer.nextInt(Integer.MAX_VALUE));
+            insertKeySequence = new CounterGenerator(maxKey);
         }
         this.insertKeyProvider = getKeyProvider(keyTypeClass, insertKeySequence, 0);
 
@@ -373,6 +375,7 @@ public class Workload {
 
     public void doTransactionRead(VoldemortWrapper db) {
         Object key = keyProvider.next(insertKeyProvider.lastInt());
+        System.out.println("Get " + key);
         db.read(key, this.value);
     }
 

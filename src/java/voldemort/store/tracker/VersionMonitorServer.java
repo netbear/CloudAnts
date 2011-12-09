@@ -137,7 +137,7 @@ public class VersionMonitorServer extends Thread {
                                                                RequestFormatType.VOLDEMORT_V2);
                 destList.add(dest);
             }
-        this.requestPool = Executors.newFixedThreadPool(destList.size());
+        this.requestPool = Executors.newFixedThreadPool(cluster.getNodes().size() + 1);
         ClientConfig config = new ClientConfig();
         this.socketPool = new SocketPool(config.getMaxConnectionsPerNode(),
                                          config.getConnectionTimeout(TimeUnit.MILLISECONDS),
@@ -237,7 +237,7 @@ public class VersionMonitorServer extends Thread {
                 DataOutputStream outputStream = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream(),
                                                                                               64000));
 
-                logger.info("nego protocol");
+                // logger.info("nego protocol");
                 negotiateProtocol(inputStream, outputStream);
                 while(true) {
                     int node = inputStream.readInt();
@@ -369,10 +369,10 @@ public class VersionMonitorServer extends Thread {
     }
 
     public synchronized void updateClusterClock() {
-        logger.info("udpate cluster clock");
+        // logger.info("udpate cluster clock");
         ArrayList<Future<?>> futures = new ArrayList<Future<?>>();
         for(SocketDestination dest: destList) {
-            logger.info("Dest : " + dest);
+            // logger.info("Dest : " + dest);
             futures.add(requestPool.submit(new OutgoingRequestHandler(this, dest)));
         }
 
@@ -385,7 +385,7 @@ public class VersionMonitorServer extends Thread {
                 e.printStackTrace();
             }
         }
-        logger.info("ending update cluster clock");
+        // logger.info("ending update cluster clock");
     }
 
     public VectorClock getClusterVersion() {

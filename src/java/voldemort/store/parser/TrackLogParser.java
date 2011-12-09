@@ -85,8 +85,8 @@ public class TrackLogParser {
                             versions[i] = Byte.parseByte(versionParts[i]);
                         }
                         VectorClock version = new VectorClock(versions, 0);
-                        // System.out.println(version.toString());
 
+                        // Timestamp:
                         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss,SSS");
                         Date d = sdf.parse(m.group(1));
                         long timestamp = d.getTime();
@@ -96,8 +96,9 @@ public class TrackLogParser {
                             this.lastCorrectTime = timestamp;
                             this.lastCorrectVersion = version;
                         }
-                        String client = m.group(2);
 
+                        // Client:
+                        String client = m.group(2);
                         if(!clients.containsKey(client)) {
                             ClientNode cNode = new ClientNode(client);
                             clients.put(client, cNode);

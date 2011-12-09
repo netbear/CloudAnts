@@ -35,7 +35,7 @@ public class TrackStore<K, V> extends DelegatingStore<K, V> {
 
     private Map<K, KeyAccess> keyUpdates;
     private final MetadataStore metaData;
-    private VersionMonitor monitor;
+
     private Object keyCacheLock = new Object();
     private int nodeId;
     private Timer timer;
@@ -91,7 +91,7 @@ public class TrackStore<K, V> extends DelegatingStore<K, V> {
     @Override
     public List<Versioned<V>> get(K key) throws VoldemortException {
         List<Versioned<V>> rValue;
-        // Versioned<byte[]> version;
+
         try {
             rValue = super.get(key);
         } catch(VoldemortException e) {
@@ -99,8 +99,6 @@ public class TrackStore<K, V> extends DelegatingStore<K, V> {
         }
 
         String addr = VersionMonitor.getAddr();
-        // logger.info(addr + " Get " + key + " "
-        // + Arrays.toString(((VectorClock) version.getVersion()).toBytes()));
 
         if(keyUpdates.keySet().contains(key)) {
             synchronized(keyCacheLock) {

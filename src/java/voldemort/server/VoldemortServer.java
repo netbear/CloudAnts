@@ -206,9 +206,8 @@ public class VoldemortServer extends AbstractService {
             services.add(new AnalyzerService(voldemortConfig.getAnalyzerPort(),
                                              voldemortConfig.getAnalyzerMaxConnections(),
                                              voldemortConfig.getAnalyzerBufferSize()));
+            services.add(new VersionMonitor(metadata, new ClientConfig()));
         }
-
-        services.add(new VersionMonitor(metadata, new ClientConfig()));
 
         return ImmutableList.copyOf(services);
     }
