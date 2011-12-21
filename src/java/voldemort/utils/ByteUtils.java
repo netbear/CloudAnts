@@ -82,6 +82,25 @@ public class ByteUtils {
     }
 
     /**
+     * Translate the given hexidecimal string into byte array
+     * 
+     * @param string in hex format
+     * @return bytes
+     */
+    public static byte[] fromHexString(String hexString) {
+
+        hexString = hexString.toLowerCase();
+        byte[] byteArray = new byte[hexString.length() / 2];
+
+        for(int i = 0; i < byteArray.length; i++) {
+            byte high = (byte) (Character.digit(hexString.charAt(i * 2), 16) & 0xff);
+            byte low = (byte) (Character.digit(hexString.charAt(i * 2 + 1), 16) & 0xff);
+            byteArray[i] = (byte) (high << 4 | low);
+        }
+        return byteArray;
+    }
+
+    /**
      * Translate the given byte array into a string of 1s and 0s
      * 
      * @param bytes The bytes to translate

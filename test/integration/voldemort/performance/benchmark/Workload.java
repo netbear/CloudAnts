@@ -330,7 +330,7 @@ public class Workload {
         IntegerGenerator keyGenerator = null;
         if(recordSelection.compareTo(Benchmark.UNIFORM_RECORD_SELECTION) == 0) {
 
-            int keySpace = (recordCount > 0) ? recordCount : Integer.MAX_VALUE;
+            int keySpace = (recordCount > 0) ? recordCount : maxKey; // Integer.MAX_VALUE;
             keyGenerator = new UniformIntegerGenerator(0, keySpace - 1);
 
         } else if(recordSelection.compareTo(Benchmark.ZIPFIAN_RECORD_SELECTION) == 0) {
@@ -374,8 +374,12 @@ public class Workload {
     }
 
     public void doTransactionRead(VoldemortWrapper db) {
+        // long startNs = System.nanoTime();
         Object key = keyProvider.next(insertKeyProvider.lastInt());
-        System.out.println("Get " + key);
+        // long endNs = System.nanoTime();
+        // System.out.println("key spent: " + (int) ((endNs - startNs) /
+        // Time.NS_PER_MS) + "ms.");
+        // System.out.println("Get " + key);
         db.read(key, this.value);
     }
 

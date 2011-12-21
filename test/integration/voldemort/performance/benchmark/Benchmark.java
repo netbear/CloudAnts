@@ -187,6 +187,7 @@ public class Benchmark {
         public void run() {
             long startTime = System.currentTimeMillis();
             while(opsDone < this.opsCount) {
+                // long opstart = System.currentTimeMillis();
                 if(runBenchmark) {
                     if(!workLoad.doTransaction(this.db)) {
                         break;
@@ -197,10 +198,13 @@ public class Benchmark {
                     }
                 }
                 opsDone++;
+                // System.out.println("Thread " + this.getId() + "op spent : "+
+                // (System.currentTimeMillis() - opstart) + " ms.");
                 if(targetThroughputPerMs > 0) {
                     while(System.currentTimeMillis() - startTime < ((double) opsDone)
                                                                    / targetThroughputPerMs) {
                         try {
+                            System.out.println("sleep");
                             sleep(1);
                         } catch(InterruptedException e) {}
                     }
@@ -666,6 +670,7 @@ public class Benchmark {
             benchmark = new Benchmark();
             benchmark.initialize(mainProps);
             benchmark.warmUpAndRun();
+            Thread.sleep(2000);
             benchmark.close();
         } catch(Exception e) {
             if(options.has(VERBOSE)) {
